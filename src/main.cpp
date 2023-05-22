@@ -13,6 +13,7 @@
 
 #define APP_NAME                "Dual-Temp-Logger"
 #define ONE_WIRE_BUS            4
+#define SLEEP_DURATION          10e6
 
 ADC_MODE(ADC_VCC);
 
@@ -41,6 +42,18 @@ void printAddress(DeviceAddress deviceAddress)
   }
 }
 
+void shutdown() {
+  Serial.println("\nDisconnecting MQTT...");
+  messenger.disconnect();
+
+  Serial.println("\nShutting down WiFi...");
+  WiFi.disconnect();
+  WiFi.mode(WIFI_OFF);
+
+  Serial.println("\nGoing to sleep...");
+  ESP.deepSleep(SLEEP_DURATION);
+}
+
 void setup()
 {
   Serial.begin(9600);
@@ -58,6 +71,7 @@ void setup()
     Serial.print(", IP address: "); Serial.println(WiFi.localIP()); 
   } else {
     Serial.println("\nWiFi not connected.");
+    shutdown();
   }
 
   ServiceDiscovery sd = ServiceDiscovery(clientId.c_str());
@@ -66,8 +80,10 @@ void setup()
   messenger.setVersion(VERSION)
     .setClientId(clientId.c_str())
     .setAppName(APP_NAME)
-    .setBroker(sd.getIP(), sd.getPort())
-    .initialize();
+    .setBroker(sd.getIP(), sd.getPort());
+  if (!messenger.initialize()) {
+    shutdown();
+  }
 
   messenger.heartbeat();
 
@@ -104,14 +120,10 @@ void setup()
     messenger.send(topic.c_str(), String(tempC).c_str());
   }
 
-  Serial.println("\nShutting down WiFi...");
-  WiFi.disconnect();
-  WiFi.mode(WIFI_OFF);
-
-  Serial.println("\nGoing to sleep...");
-  ESP.deepSleep(10e6);
+  shutdown();
 }
 
 void loop()
 {
+  shutdown();
 }

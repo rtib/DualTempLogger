@@ -9,6 +9,10 @@ Messenger::Messenger() {
   init = false;
 }
 
+Messenger::~Messenger() {
+  disconnect();
+}
+
 Messenger& Messenger::setAppName(const char *appName)
 {
   this->appName = appName;
@@ -37,8 +41,7 @@ Messenger& Messenger::setBroker(IPAddress ip, uint16_t port) {
 }
 
 bool Messenger::initialize() {
-  init = true;
-  mqReconnect();
+  init = mqReconnect();
   return init;
 }
 
@@ -63,16 +66,32 @@ void Messenger::loop() {
   msgClient.loop();
 }
 
-void Messenger::mqReconnect() {
+void Messenger::disconnect() {
+  msgClient.disconnect();
+  init = false;
+}
+
+bool Messenger::mqReconnect() {
+  int retries = CONNECT_RETRIES;
+  if (msgClient.connected()) {
+    disconnect();
+  }
+
   while (!msgClient.connected()) {
+    if (retries == 0) {
+      Serial.println("MQTT connection failed. Resetting.");
+      return false;
+    }
     Serial.print("Attempting MQTT connection...");
-    if (msgClient.connect("test")) {
+    if (msgClient.connect(clientId.c_str())) {
       Serial.println("connected");
     } else {
+      retries--;
       Serial.print("failed, rc=");
       Serial.print(msgClient.state());
       Serial.println(" try again in 5 seconds");
       delay(5000);
     }
   }
+  return msgClient.connected();
 }

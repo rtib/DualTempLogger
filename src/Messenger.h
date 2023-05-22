@@ -3,9 +3,12 @@
 #include <ESP8266mDNS.h>
 #include <PubSubClient.h>
 
+#define CONNECT_RETRIES 5
+
 class Messenger {
   public:
     Messenger();
+    ~Messenger();
 
     Messenger& setAppName(const char* appName);
     Messenger& setVersion(const char* version);
@@ -15,6 +18,7 @@ class Messenger {
     void send(const char* topic, const char* payload);
     void heartbeat();
     void loop();
+    void disconnect();
 
   private:
     String appName;
@@ -24,5 +28,5 @@ class Messenger {
     WiFiClient wifiClient;
     PubSubClient msgClient;
 
-    void mqReconnect();
+    bool mqReconnect();
 };
