@@ -22,6 +22,7 @@ DallasTemperature sensor;
 Messenger messenger;
 WiFiManager wifiManager;
 int numberOfDevices;
+String sensorsPrefix;
 
 String hexAddress(DeviceAddress deviceAddress) {
   String hex = "";
@@ -63,6 +64,9 @@ void setup()
   String clientId = String(APP_NAME) + "/" + String(ESP.getChipId(), HEX);
   Serial.print("Client ID: "); Serial.println(clientId);
 
+  sensorsPrefix = String("sensors/") + String(ESP.getChipId(), HEX) + "/";
+  Serial.print("Sensors prefix: "); Serial.println(sensorsPrefix);
+
   Serial.println("\nStarting up WiFi Manager...");
   wifiManager.autoConnect(clientId.c_str());
   if(WiFi.isConnected()) {
@@ -88,7 +92,7 @@ void setup()
   messenger.heartbeat();
 
   Serial.print("\nVcc: "); Serial.println(ESP.getVcc());
-  messenger.send((String("sensor/") + String(ESP.getChipId(), HEX) + "/Vcc").c_str(), String(ESP.getVcc()).c_str());
+  messenger.send((sensorsPrefix + "Vcc").c_str(), String(ESP.getVcc()).c_str());
 
   Serial.println("\nPreparing measurement...");
   oneWire = OneWire(ONE_WIRE_BUS);
@@ -116,7 +120,7 @@ void setup()
     }
     Serial.print(tempC);
     Serial.println(" C");
-    String topic = "sensor/" + hexAddress(address) + "/temperature";
+    String topic = sensorsPrefix + "temperature/" + hexAddress(address);
     messenger.send(topic.c_str(), String(tempC).c_str());
   }
 
