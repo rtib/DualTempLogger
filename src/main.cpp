@@ -13,7 +13,8 @@
 
 #define APP_NAME                "Dual-Temp-Logger"
 #define ONE_WIRE_BUS            4
-#define SLEEP_DURATION          10e6
+#define SENSOR_POWER_PIN        5
+#define SLEEP_DURATION          30e6
 
 ADC_MODE(ADC_VCC);
 
@@ -51,6 +52,9 @@ void shutdown() {
   WiFi.disconnect();
   WiFi.mode(WIFI_OFF);
 
+  Serial.println("\nPowering down sensors.");
+  digitalWrite(SENSOR_POWER_PIN, LOW);
+
   Serial.println("\nGoing to sleep...");
   ESP.deepSleep(SLEEP_DURATION);
 }
@@ -66,6 +70,11 @@ void setup()
 
   sensorsPrefix = String("sensors/") + String(ESP.getChipId(), HEX) + "/";
   Serial.print("Sensors prefix: "); Serial.println(sensorsPrefix);
+
+  Serial.println("\nPowering up sensors.");
+  pinMode(SENSOR_POWER_PIN, OUTPUT);
+  digitalWrite(SENSOR_POWER_PIN, HIGH);
+  delay(1000);
 
   Serial.println("\nStarting up WiFi Manager...");
   wifiManager.autoConnect(clientId.c_str());
@@ -124,6 +133,7 @@ void setup()
     messenger.send(topic.c_str(), String(tempC).c_str());
   }
 
+  Serial.println("Shutting down...");
   shutdown();
 }
 
